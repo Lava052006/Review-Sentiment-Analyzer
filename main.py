@@ -52,34 +52,50 @@ target_count = st.sidebar.slider("Target Number of Reviews", 10, 500, 50, step=1
 # URL Input
 url = st.text_input("Enter Flipkart Product URL", placeholder="https://www.flipkart.com/...")
 
-# Notification area (fixed spot to prevent layout shifts)
+# ✅ FIX 1: Single persistent message slot — only used once per render
 status_area = st.empty()
 
 # Initialize session state for data persistence
 if 'scraped_df' not in st.session_state:
     st.session_state.scraped_df = None
 
+if 'status_msg' not in st.session_state:
+    st.session_state.status_msg = ("info", "Paste a Flipkart product URL above to get started.")
+
 if st.button("Analyze Sentiment"):
     if not url:
-        status_area.warning("Please enter a URL.")
+        st.session_state.status_msg = ("warning", "Please enter a URL.")
     else:
         scrape_reviews_func = get_scraper_func()
-        with status_area.container():
-            with st.spinner("Scraping reviews..."):
-                df = scrape_reviews_func(url, target_count=target_count)
-            
-            if df.empty:
-                st.error("No reviews found. Check URL.")
-            else:
-                with st.spinner("AI Sentiment Analysis..."):
-                    analyzer = get_analyzer()
-                    df = analyzer.analyze(df)
-                    st.session_state.scraped_df = df
-                st.success("Reviews scraped successfully!")
+        # Use a localized spinner that doesn't conflict with status_area
+        with st.spinner("Scraping reviews..."):
+            df = scrape_reviews_func(url, target_count=target_count)
+        
+        if df.empty:
+            st.session_state.status_msg = ("error", "No reviews found. Check URL.")
+        else:
+            with st.spinner("AI Sentiment Analysis..."):
+                analyzer = get_analyzer()
+                df = analyzer.analyze(df)
+                st.session_state.scraped_df = df
+            st.session_state.status_msg = ("success", "Analysis complete!")
+
+# ✅ FIX 1 continued: Render status from session state — stable, no conflict
+msg_type, msg_text = st.session_state.status_msg
+if msg_type == "info":
+    status_area.info(msg_text)
+elif msg_type == "warning":
+    status_area.warning(msg_text)
+elif msg_type == "error":
+    status_area.error(msg_text)
+elif msg_type == "success":
+    status_area.success(msg_text)
 
 # Display dashboard if data exists
 if st.session_state.scraped_df is not None:
     df = st.session_state.scraped_df
+    
+    # ✅ FIX 2: Reuse cached analyzer
     analyzer = get_analyzer()
     summary = analyzer.get_summary(df)
     
@@ -96,14 +112,15 @@ if st.session_state.scraped_df is not None:
             
         st.divider()
         
-        # --- CENTERED CHART (Anti-Jitter) ---
+        # --- CENTERED CHART ---
         c1, c2, c3 = st.columns([1, 2, 1])
         with c2:
             st.subheader("Sentiment Distribution")
             fig, ax = plt.subplots(figsize=(8, 6))
             sns.countplot(data=df, x='sentiment_label', palette={'Positive': 'green', 'Neutral': 'orange', 'Negative': 'red'}, ax=ax)
             ax.set_title("Count of Reviews by Sentiment")
-            plt.tight_layout() # Prevent label clipping Shaking
+            plt.tight_layout() # Prevent label clipping
             st.pyplot(fig, use_container_width=True)
+            plt.close(fig) # ✅ FIX 3: Prevent figure accumulation
 else:
-    status_area.info("Paste a Flipkart product URL above to get started.")
+    pass # Managed by session_state status_area above
