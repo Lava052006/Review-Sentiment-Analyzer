@@ -16,4 +16,4 @@ jobs:
       - name: Push to hub
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
-        run: git push --force https://Lava052006:$HF_TOKEN@huggingface.co/spaces/Lava052006/Review-Sentiment-Analyzer main
+        run: git push --force https://Lav-anya05:$HF_TOKEN@huggingface.co/spaces/Lav-anya05/Review-Sentiment-Analyzer main
