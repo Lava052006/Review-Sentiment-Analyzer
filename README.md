@@ -1,3 +1,12 @@
+---
+title: Review Sentiment Analyzer
+emoji: 📊
+colorFrom: blue
+colorTo: red
+sdk: docker
+pinned: false
+---
+
 # Review Sentiment Analyzer 🛡️
 
 An AI-powered dashboard that scrapes Flipkart product reviews, performs sentiment analysis using Transformers, and visualizes customer feedback patterns.
@@ -23,10 +32,10 @@ An AI-powered dashboard that scrapes Flipkart product reviews, performs sentimen
 ## ☁️ Deployment to Hugging Face Spaces
 
 1. Create a new **Space** on Hugging Face.
-2. Select **Streamlit** as the SDK.
+2. Select **Docker** as the SDK.
 3. In the "Create" screen, select **"Import from GitHub"**.
 4. Connect this repository: `https://github.com/Lava052006/Review-Sentiment-Analyzer`.
-5. Hugging Face will automatically use the `packages.txt` and `requirements.txt` to set up the environment.
+5. Hugging Face will automatically use the `Dockerfile` to set up the environment.
 
 ---
 Developed as part of the BitNBuild implementation.
