@@ -2,6 +2,8 @@ import streamlit as st
 import pandas as pd
 import re
 from collections import Counter
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 # Set page config
 st.set_page_config(page_title="Product Sentiment Analyzer", page_icon="📊", layout="wide")
@@ -15,7 +17,7 @@ def get_scraper_func():
     from scraper import scrape_reviews
     return scrape_reviews
 
-# Styling
+# Styling for stability
 st.markdown("""
     <style>
     .stButton>button {
@@ -32,6 +34,10 @@ st.markdown("""
         box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         text-align: center;
         border: 1px solid #ddd;
+        min-height: 150px; /* Lock height to prevent shaking */
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -46,54 +52,58 @@ target_count = st.sidebar.slider("Target Number of Reviews", 10, 500, 50, step=1
 # URL Input
 url = st.text_input("Enter Flipkart Product URL", placeholder="https://www.flipkart.com/...")
 
+# Notification area (fixed spot to prevent layout shifts)
+status_area = st.empty()
+
 # Initialize session state for data persistence
 if 'scraped_df' not in st.session_state:
     st.session_state.scraped_df = None
 
 if st.button("Analyze Sentiment"):
     if not url:
-        st.warning("Please enter a URL.")
+        status_area.warning("Please enter a URL.")
     else:
         scrape_reviews_func = get_scraper_func()
-        with st.spinner("Scraping reviews (Scrolling handle)..."):
-            df = scrape_reviews_func(url, target_count=target_count)
-        
-        if df.empty:
-            st.error("No reviews found. Check URL.")
-        else:
-            with st.spinner("AI Sentiment Analysis..."):
-                analyzer = get_analyzer()
-                df = analyzer.analyze(df)
-                st.session_state.scraped_df = df
-            st.success("Reviews scraped successfully!")
+        with status_area.container():
+            with st.spinner("Scraping reviews..."):
+                df = scrape_reviews_func(url, target_count=target_count)
+            
+            if df.empty:
+                st.error("No reviews found. Check URL.")
+            else:
+                with st.spinner("AI Sentiment Analysis..."):
+                    analyzer = get_analyzer()
+                    df = analyzer.analyze(df)
+                    st.session_state.scraped_df = df
+                st.success("Reviews scraped successfully!")
 
-# Display dashboard if data exists in session state
+# Display dashboard if data exists
 if st.session_state.scraped_df is not None:
     df = st.session_state.scraped_df
     analyzer = get_analyzer()
     summary = analyzer.get_summary(df)
     
-    import seaborn as sns
-    import matplotlib.pyplot as plt
-    
-    # --- DASHBOARD LAYOUT ---
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.markdown(f'<div class="sentiment-card"><h3>Positive</h3><h2 style="color:green">{summary.get("Positive", 0)}%</h2></div>', unsafe_allow_html=True)
-    with col2:
-        st.markdown(f'<div class="sentiment-card"><h3>Neutral</h3><h2 style="color:orange">{summary.get("Neutral", 0)}%</h2></div>', unsafe_allow_html=True)
-    with col3:
-        st.markdown(f'<div class="sentiment-card"><h3>Negative</h3><h2 style="color:red">{summary.get("Negative", 0)}%</h2></div>', unsafe_allow_html=True)
+    # --- DASHBOARD LAYOUT (Locked Container) ---
+    dashboard_container = st.container()
+    with dashboard_container:
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.markdown(f'<div class="sentiment-card"><h3>Positive</h3><h2 style="color:green">{summary.get("Positive", 0)}%</h2></div>', unsafe_allow_html=True)
+        with col2:
+            st.markdown(f'<div class="sentiment-card"><h3>Neutral</h3><h2 style="color:orange">{summary.get("Neutral", 0)}%</h2></div>', unsafe_allow_html=True)
+        with col3:
+            st.markdown(f'<div class="sentiment-card"><h3>Negative</h3><h2 style="color:red">{summary.get("Negative", 0)}%</h2></div>', unsafe_allow_html=True)
+            
+        st.divider()
         
-    st.divider()
-    
-    # --- CENTERED CHART ---
-    c1, c2, c3 = st.columns([1, 2, 1])
-    with c2:
-        st.subheader("Sentiment Distribution")
-        fig, ax = plt.subplots(figsize=(8, 6))
-        sns.countplot(data=df, x='sentiment_label', palette={'Positive': 'green', 'Neutral': 'orange', 'Negative': 'red'}, ax=ax)
-        ax.set_title("Count of Reviews by Sentiment")
-        st.pyplot(fig)
+        # --- CENTERED CHART (Anti-Jitter) ---
+        c1, c2, c3 = st.columns([1, 2, 1])
+        with c2:
+            st.subheader("Sentiment Distribution")
+            fig, ax = plt.subplots(figsize=(8, 6))
+            sns.countplot(data=df, x='sentiment_label', palette={'Positive': 'green', 'Neutral': 'orange', 'Negative': 'red'}, ax=ax)
+            ax.set_title("Count of Reviews by Sentiment")
+            plt.tight_layout() # Prevent label clipping Shaking
+            st.pyplot(fig, use_container_width=True)
 else:
-    st.info("Paste a Flipkart product URL above to get started.")
+    status_area.info("Paste a Flipkart product URL above to get started.")
