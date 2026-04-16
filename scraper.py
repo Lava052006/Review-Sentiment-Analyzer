@@ -16,8 +16,11 @@ def get_reviews_url(product_url):
         return product_url.replace("/p/", "/product-reviews/")
     return product_url
 
+import sys
+import os
+
 def setup_driver():
-    """Sets up a headless Chrome WebDriver."""
+    """Sets up a headless Chrome WebDriver (supports both Windows and Linux/HF)."""
     options = Options()
     options.add_argument('--headless')
     options.add_argument('--disable-gpu')
@@ -26,8 +29,19 @@ def setup_driver():
     options.add_argument('--window-size=1920,1080')
     options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36")
     
-    service = Service(ChromeDriverManager().install())
-    driver = webdriver.Chrome(service=service, options=options)
+    # Check if running in a Linux/Hugging Face environment
+    if os.name == 'posix':
+        # On HF Spaces with packages.txt, chromium is usually at /usr/bin/chromium
+        # and chromium-driver is already in the PATH.
+        print("Detected Linux environment (Hugging Face). Using system chromium...")
+        options.binary_location = "/usr/bin/chromium"
+        driver = webdriver.Chrome(options=options)
+    else:
+        # Local Windows environment
+        print("Detected Windows environment. Using WebDriver Manager...")
+        service = Service(ChromeDriverManager().install())
+        driver = webdriver.Chrome(service=service, options=options)
+        
     return driver
 
 def scrape_reviews(product_url, target_count=50):
