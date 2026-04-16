@@ -1,19 +1,31 @@
+# Ignore Python cache files
 __pycache__/
 *.pyc
-*.exe
+*.pyo
+*.pyd
+
+# Ignore OS/system files
+Thumbs.db
+.DS_Store
 *.log
+desktop.ini
+
+# Ignore binaries
 chromedriver.exe
-debug_*.py
-1_bs4.py
-2_bs4.py
-*.html
-*.csv
-archive/
-test/
-.streamlit/
+*.exe
+*.dll
+
+# Ignore environment files
 .env
 venv/
 env/
-source.html
-flipkart_test.html
-file.html
+
+# Ignore legacy scrapers
+1_bs4.py
+2_bs4.py
+archive/
+
+# Ignore sample data (keeping code and requested HTMLs)
+*.csv
+test/
+.streamlit/
