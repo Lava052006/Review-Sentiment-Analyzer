@@ -8,3 +8,4 @@ torch
 selenium
 webdriver-manager
 tf-keras
+plotly
