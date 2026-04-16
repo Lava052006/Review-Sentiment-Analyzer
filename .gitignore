@@ -1,14 +1,19 @@
-# Ignore Python cache files
 __pycache__/
 *.pyc
-
-# Ignore OS/system files
-Thumbs.db
-.DS_Store
+*.exe
 *.log
-
-# Ignore ChromeDriver
 chromedriver.exe
-
-# Ignore environment files
+debug_*.py
+1_bs4.py
+2_bs4.py
+*.html
+*.csv
+archive/
+test/
+.streamlit/
 .env
+venv/
+env/
+source.html
+flipkart_test.html
+file.html

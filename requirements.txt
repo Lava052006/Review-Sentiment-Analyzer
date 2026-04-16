@@ -1,0 +1,10 @@
+streamlit
+pandas
+seaborn
+matplotlib
+beautifulsoup4
+transformers
+torch
+selenium
+webdriver-manager
+tf-keras
