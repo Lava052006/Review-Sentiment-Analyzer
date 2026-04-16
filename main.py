@@ -46,6 +46,10 @@ target_count = st.sidebar.slider("Target Number of Reviews", 10, 500, 50, step=1
 # URL Input
 url = st.text_input("Enter Flipkart Product URL", placeholder="https://www.flipkart.com/...")
 
+# Initialize session state for data persistence
+if 'scraped_df' not in st.session_state:
+    st.session_state.scraped_df = None
+
 if st.button("Analyze Sentiment"):
     if not url:
         st.warning("Please enter a URL.")
@@ -57,35 +61,39 @@ if st.button("Analyze Sentiment"):
         if df.empty:
             st.error("No reviews found. Check URL.")
         else:
-            st.success(f"Successfully scraped {len(df)} reviews!")
-            
             with st.spinner("AI Sentiment Analysis..."):
                 analyzer = get_analyzer()
                 df = analyzer.analyze(df)
-            
-            import seaborn as sns
-            import matplotlib.pyplot as plt
-            
-            summary = analyzer.get_summary(df)
-            
-            # --- DASHBOARD LAYOUT ---
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                st.markdown(f'<div class="sentiment-card"><h3>Positive</h3><h2 style="color:green">{summary.get("Positive", 0)}%</h2></div>', unsafe_allow_html=True)
-            with col2:
-                st.markdown(f'<div class="sentiment-card"><h3>Neutral</h3><h2 style="color:orange">{summary.get("Neutral", 0)}%</h2></div>', unsafe_allow_html=True)
-            with col3:
-                st.markdown(f'<div class="sentiment-card"><h3>Negative</h3><h2 style="color:red">{summary.get("Negative", 0)}%</h2></div>', unsafe_allow_html=True)
-                
-            st.divider()
-            
-            # --- CENTERED CHART ---
-            c1, c2, c3 = st.columns([1, 2, 1])
-            with c2:
-                st.subheader("Sentiment Distribution")
-                fig, ax = plt.subplots(figsize=(8, 6))
-                sns.countplot(data=df, x='sentiment_label', palette={'Positive': 'green', 'Neutral': 'orange', 'Negative': 'red'}, ax=ax)
-                ax.set_title("Count of Reviews by Sentiment")
-                st.pyplot(fig)
+                st.session_state.scraped_df = df
+            st.success("Reviews scraped successfully!")
+
+# Display dashboard if data exists in session state
+if st.session_state.scraped_df is not None:
+    df = st.session_state.scraped_df
+    analyzer = get_analyzer()
+    summary = analyzer.get_summary(df)
+    
+    import seaborn as sns
+    import matplotlib.pyplot as plt
+    
+    # --- DASHBOARD LAYOUT ---
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.markdown(f'<div class="sentiment-card"><h3>Positive</h3><h2 style="color:green">{summary.get("Positive", 0)}%</h2></div>', unsafe_allow_html=True)
+    with col2:
+        st.markdown(f'<div class="sentiment-card"><h3>Neutral</h3><h2 style="color:orange">{summary.get("Neutral", 0)}%</h2></div>', unsafe_allow_html=True)
+    with col3:
+        st.markdown(f'<div class="sentiment-card"><h3>Negative</h3><h2 style="color:red">{summary.get("Negative", 0)}%</h2></div>', unsafe_allow_html=True)
+        
+    st.divider()
+    
+    # --- CENTERED CHART ---
+    c1, c2, c3 = st.columns([1, 2, 1])
+    with c2:
+        st.subheader("Sentiment Distribution")
+        fig, ax = plt.subplots(figsize=(8, 6))
+        sns.countplot(data=df, x='sentiment_label', palette={'Positive': 'green', 'Neutral': 'orange', 'Negative': 'red'}, ax=ax)
+        ax.set_title("Count of Reviews by Sentiment")
+        st.pyplot(fig)
 else:
     st.info("Paste a Flipkart product URL above to get started.")
